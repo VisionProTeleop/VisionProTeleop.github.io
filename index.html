@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VisionProTeleop Viewer</title>
+    <meta name="description" content="Browse and view VisionPro hand/head tracking recordings">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="css/styles.css">
+    
+    <!-- Three.js for 3D visualization -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <!-- CloudKit JS -->
+    <script src="https://cdn.apple-cloudkit.com/ck/2/cloudkit.js"></script>
+</head>
+<body>
+    <!-- Navigation Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <span class="logo-icon">🎥</span>
+                <span class="logo-text">VisionProTeleop</span>
+            </div>
+            
+            <nav class="nav-tabs">
+                <button class="nav-tab active" data-tab="public">
+                    <span class="tab-icon">🌐</span>
+                    <span class="tab-text">Public</span>
+                </button>
+                <button class="nav-tab" data-tab="my-recordings">
+                    <span class="tab-icon">👤</span>
+                    <span class="tab-text">My Recordings</span>
+                </button>
+            </nav>
+            
+            <div class="header-actions">
+                <button class="btn-icon" id="refresh-btn" title="Refresh">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M23 4v6h-6M1 20v-6h6"/>
+                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </header>
+    
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Public Recordings Tab -->
+        <section id="public-tab" class="tab-content active">
+            <!-- Filter Bar -->
+            <div class="filter-bar">
+                <div class="filter-chips">
+                    <button class="filter-chip active" data-filter="all">
+                        <span class="chip-icon">📋</span>
+                        All
+                    </button>
+                    <button class="filter-chip" data-filter="today">
+                        <span class="chip-icon">📅</span>
+                        Today
+                    </button>
+                    <button class="filter-chip" data-filter="week">
+                        <span class="chip-icon">📆</span>
+                        This Week
+                    </button>
+                    <button class="filter-chip" data-filter="month">
+                        <span class="chip-icon">🗓️</span>
+                        This Month
+                    </button>
+                </div>
+                
+                <div class="search-container">
+                    <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="m21 21-4.35-4.35"/>
+                    </svg>
+                    <input type="text" class="search-input" placeholder="Search recordings..." id="search-input">
+                </div>
+            </div>
+            
+            <!-- Recordings Grid -->
+            <div class="recordings-grid" id="public-recordings-grid">
+                <!-- Loading state -->
+                <div class="loading-state" id="public-loading">
+                    <div class="spinner"></div>
+                    <p>Loading public recordings...</p>
+                </div>
+            </div>
+            
+            <!-- Empty State -->
+            <div class="empty-state hidden" id="public-empty">
+                <div class="empty-icon">🌐</div>
+                <h3>No Public Recordings</h3>
+                <p>No recordings have been shared publicly yet</p>
+                <button class="btn-primary" id="public-refresh-btn">Refresh</button>
+            </div>
+            
+            <!-- Error State -->
+            <div class="error-state hidden" id="public-error">
+                <div class="error-icon">⚠️</div>
+                <h3>Failed to Load</h3>
+                <p class="error-message"></p>
+                <button class="btn-primary" id="public-retry-btn">Retry</button>
+            </div>
+        </section>
+        
+        <!-- My Recordings Tab -->
+        <section id="my-recordings-tab" class="tab-content hidden">
+            <!-- Cloud Provider Selection -->
+            <div class="auth-section" id="auth-section">
+                <h2>Sign in to view your recordings</h2>
+                <p class="auth-description">Connect your cloud storage to browse your personal VisionProTeleop recordings.</p>
+                
+                <div class="auth-buttons">
+                    <button class="auth-btn google-btn" id="google-signin-btn">
+                        <svg class="provider-icon" viewBox="0 0 24 24" width="24" height="24">
+                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                        </svg>
+                        <span>Sign in with Google Drive</span>
+                    </button>
+                    
+                    <button class="auth-btn dropbox-btn" id="dropbox-signin-btn">
+                        <svg class="provider-icon" viewBox="0 0 24 24" width="24" height="24">
+                            <path fill="#0061FF" d="M12 6.19L6.93 9.54 12 12.89 6.93 16.24 1.86 12.89 6.93 9.54 1.86 6.19 6.93 2.84 12 6.19zM6.93 17.53l5.07-3.35 5.07 3.35-5.07 3.35-5.07-3.35zM12 12.89l5.07-3.35L12 6.19l5.07-3.35 5.07 3.35-5.07 3.35 5.07 3.35-5.07 3.35L12 12.89z"/>
+                        </svg>
+                        <span>Sign in with Dropbox</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Authenticated View -->
+            <div class="my-recordings-content hidden" id="my-recordings-content">
+                <!-- Provider selector when both connected -->
+                <div class="provider-tabs" id="provider-tabs">
+                    <button class="provider-tab active" data-provider="google">
+                        <span class="provider-badge google">G</span>
+                        Google Drive
+                    </button>
+                    <button class="provider-tab" data-provider="dropbox">
+                        <span class="provider-badge dropbox">D</span>
+                        Dropbox
+                    </button>
+                    <button class="signout-btn" id="signout-btn">Sign Out</button>
+                </div>
+                
+                <!-- My Recordings Grid -->
+                <div class="recordings-grid" id="my-recordings-grid">
+                    <div class="loading-state" id="my-loading">
+                        <div class="spinner"></div>
+                        <p>Loading your recordings...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <!-- Recording Detail Modal -->
+    <div class="modal hidden" id="recording-modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <button class="modal-close" id="modal-close">&times;</button>
+            
+            <div class="modal-body">
+                <!-- Video Player Section -->
+                <div class="video-section">
+                    <video id="video-player" controls>
+                        <source src="" type="video/mp4">
+                    </video>
+                    <div class="video-loading hidden" id="video-loading">
+                        <div class="spinner"></div>
+                        <p>Loading video...</p>
+                    </div>
+                </div>
+                
+                <!-- 3D Skeleton Viewer -->
+                <div class="skeleton-section">
+                    <div class="skeleton-header">
+                        <h3>Hand Tracking</h3>
+                        <div class="skeleton-controls">
+                            <button class="btn-icon" id="follow-head-btn" title="Toggle head follow">
+                                <span>👤</span>
+                            </button>
+                            <span class="frame-counter" id="frame-counter">Frame: 0/0</span>
+                        </div>
+                    </div>
+                    <div id="skeleton-container"></div>
+                </div>
+                
+                <!-- Recording Info -->
+                <div class="info-section">
+                    <h2 id="modal-title">Recording Title</h2>
+                    
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">Provider</span>
+                            <span class="info-value" id="modal-provider">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Created</span>
+                            <span class="info-value" id="modal-date">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Frames</span>
+                            <span class="info-value" id="modal-frames">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Duration</span>
+                            <span class="info-value" id="modal-duration">-</span>
+                        </div>
+                    </div>
+                    
+                    <div class="modal-actions">
+                        <a href="#" class="btn-primary" id="open-cloud-btn" target="_blank">
+                            <span>🔗</span> Open in Cloud
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toast-container"></div>
+    
+    <!-- Scripts -->
+    <script src="js/config.js"></script>
+    <script src="js/cloudkit.js"></script>
+    <script src="js/google-drive.js"></script>
+    <script src="js/dropbox.js"></script>
+    <script src="js/tracking-viewer.js"></script>
+    <script src="js/video-player.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
