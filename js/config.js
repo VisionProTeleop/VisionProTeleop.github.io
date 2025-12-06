@@ -12,7 +12,7 @@ const CONFIG = {
     cloudkit: {
         containerIdentifier: 'iCloud.com.younghyopark.VisionProTeleop',
         // TODO: Generate API token from Apple Developer Portal
-        apiToken: 'YOUR_CLOUDKIT_API_TOKEN',
+        apiToken: '4f1fe4d7ee8415ccb16e808e797b58fce1ba60ff4bf81b381847b7225aee0621',
         environment: 'production'
     },
 
