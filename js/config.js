@@ -18,7 +18,7 @@ const CONFIG = {
 
     // Google Drive OAuth Configuration
     google: {
-        clientId: '757572625045-vj93vgnu0l7fqfc4nf3rp6laqe5r1ljj.apps.googleusercontent.com',
+        clientId: '613801329299-4iomtqkf75s9d48h8f6742qlm16js7sa.apps.googleusercontent.com',
         // The redirect URI will be constructed based on current location
         get redirectUri() {
             return window.location.origin + window.location.pathname;
