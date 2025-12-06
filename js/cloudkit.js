@@ -17,43 +17,51 @@ class CloudKitClient {
      * Initialize CloudKit
      */
     async init() {
-        return new Promise((resolve, reject) => {
-            // Check if CloudKit JS is loaded
-            if (typeof CloudKit === 'undefined') {
-                console.warn('CloudKit JS not loaded - public recordings will use demo mode');
-                this.isConfigured = false;
-                resolve(false);
-                return;
-            }
+        // Check if CloudKit JS is loaded
+        if (typeof CloudKit === 'undefined') {
+            console.warn('CloudKit JS not loaded - public recordings will use demo mode');
+            this.isConfigured = false;
+            return false;
+        }
 
-            // Check if API token is configured
-            if (CONFIG.cloudkit.apiToken === 'YOUR_CLOUDKIT_API_TOKEN') {
-                console.warn('CloudKit API token not configured - using demo mode');
-                this.isConfigured = false;
-                resolve(false);
-                return;
-            }
+        // Check if API token is configured
+        if (CONFIG.cloudkit.apiToken === 'YOUR_CLOUDKIT_API_TOKEN') {
+            console.warn('CloudKit API token not configured - using demo mode');
+            this.isConfigured = false;
+            return false;
+        }
 
-            try {
-                CloudKit.configure({
-                    containers: [{
-                        containerIdentifier: CONFIG.cloudkit.containerIdentifier,
+        try {
+            CloudKit.configure({
+                containers: [{
+                    containerIdentifier: CONFIG.cloudkit.containerIdentifier,
+                    apiTokenAuth: {
                         apiToken: CONFIG.cloudkit.apiToken,
-                        environment: CONFIG.cloudkit.environment
-                    }]
-                });
+                        persist: true
+                    },
+                    environment: CONFIG.cloudkit.environment
+                }]
+            });
 
-                this.container = CloudKit.getDefaultContainer();
-                this.database = this.container.publicCloudDatabase;
-                this.isConfigured = true;
-                console.log('✅ CloudKit initialized');
-                resolve(true);
-            } catch (error) {
-                console.error('❌ CloudKit initialization failed:', error);
-                this.isConfigured = false;
-                resolve(false);
+            this.container = CloudKit.getDefaultContainer();
+            this.database = this.container.publicCloudDatabase;
+
+            // Set up anonymous authentication for public data access
+            try {
+                await this.container.setUpAuth();
+            } catch (authError) {
+                console.warn('Auth setup warning (may be normal for public access):', authError);
             }
-        });
+
+            this.isConfigured = true;
+            console.log('✅ CloudKit initialized');
+            return true;
+        } catch (error) {
+            console.error('❌ CloudKit initialization failed:', error);
+            console.log('📋 Falling back to demo mode');
+            this.isConfigured = false;
+            return false;
+        }
     }
 
     /**
@@ -103,7 +111,8 @@ class CloudKitClient {
 
         } catch (error) {
             console.error('❌ Failed to fetch public recordings:', error);
-            throw error;
+            // Fall back to demo mode on error
+            return this.getDemoRecordings();
         }
     }
 
